@@ -1,4 +1,11 @@
 declare module "*.vue" {
-  import Vue from "vue";
-  export default Vue;
+  import { ComponentOptions } from "vue";
+  const component: ComponentOptions;
+  export default component;
+}
+
+declare module "vue/types/vue" {
+  interface Vue {
+    $store: VuexStore;
+  }
 }
