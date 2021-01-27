@@ -9,10 +9,10 @@ class HttpService {
     return new Promise((resolve, reject) => {
       axios
         .get(url)
-        .then((response) => {
+        .then(response => {
           resolve(response.data);
         })
-        .catch((err) => {
+        .catch(err => {
           reject(err);
         });
     });

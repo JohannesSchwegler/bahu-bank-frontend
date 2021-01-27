@@ -12,7 +12,7 @@ export default new Vuex.Store({
   mutations: {
     addBotMessages(state: State, payload: any) {
       state.botMessages = [...state.botMessages, payload];
-    },
+    }
   },
   actions: {
     async fetchInitalMessages({ commit }: any) {
@@ -20,7 +20,7 @@ export default new Vuex.Store({
         "https://jsonbox.io/box_1091c3b238600908236f"
       );
       commit("addBotMessages", messages);
-    },
+    }
   },
-  modules: {},
+  modules: {}
 });
