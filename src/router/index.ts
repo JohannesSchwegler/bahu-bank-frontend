@@ -6,7 +6,7 @@ Vue.use(VueRouter);
 
 const routes: Array<RouteConfig> = [
   {
-    path: "/",
+    path: "",
     name: "Home",
     component: Home
   },
@@ -18,10 +18,18 @@ const routes: Array<RouteConfig> = [
     // which is lazy-loaded when the route is visited.
     component: () =>
       import(/* webpackChunkName: "about" */ "../views/About.vue")
+  },
+
+  {
+    path: "/face-recognition",
+    name: "FaceRecognition",
+    component: () =>
+      import(/* webpackChunkName: "about" */ "../views/FaceRecognition.vue")
   }
 ];
 
 const router = new VueRouter({
+  mode: "history",
   routes
 });
 

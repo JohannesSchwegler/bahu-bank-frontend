@@ -11,17 +11,18 @@
 
 <script>
 import ChatBox from "./ChatBox.vue";
+import { RECOMMENDATIONSERVICE_INSTANCE } from "@/services/recommendations.service";
 import axios, { AxiosInstance } from "axios";
 export default {
   components: {
-    ChatBox,
+    ChatBox
   },
   data() {
     return {
       userInput: [],
       recognition: null,
       content: "",
-      responseMessage: "",
+      responseMessage: ""
     };
   },
   mounted() {
@@ -42,23 +43,23 @@ export default {
       const message = this.content;
       const data = {
         message: { content: message, type: "text" },
-        ["conversation_id"]: "1234567891",
+        ["conversation_id"]: "1234567891"
       };
 
       axios
         .post("https://api.cai.tools.sap/build/v1/dialog", data, {
           headers: {
             "Content-Type": "application/json",
-            Authorization: process.env.VUE_APP_TOKEN,
-          },
+            Authorization: process.env.VUE_APP_TOKEN
+          }
         })
-        .then((response) => {
+        .then(response => {
           return response.data;
         })
-        .then((data) => {
+        .then(data => {
           this.responseMessage = data.results.messages[0].content;
         })
-        .catch((error) => {
+        .catch(error => {
           console.log(error);
           new Error(error);
         });
@@ -68,21 +69,22 @@ export default {
         console.log("started");
       };
 
-      this.recognition.onresult = (event) => {
+      this.recognition.onresult = event => {
         const current = event.resultIndex;
         const transcript = event.results[current][0].transcript;
         const mobileRepeatBug =
           current == 1 && transcript == event.results[0][0].transcript;
         if (!mobileRepeatBug) {
           this.userInput.push(transcript);
+          RECOMMENDATIONSERVICE_INSTANCE.addUserSpeech(transcript);
           this.content += transcript;
         }
       };
-    },
+    }
   },
   beforeDestroy() {
     //this.recognition.stop();
-  },
+  }
 };
 </script>
 

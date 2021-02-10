@@ -1,66 +1,113 @@
 <template>
-  <video id="video" width="720" height="560" autoplay muted></video>
+  <b-overlay :show="show" rounded="sm">
+    <div class="home">
+      <RwvCamera @pictureTaken="setImage($event)" />
+      <RwvText v-bind:prediction="mood"></RwvText>
+      <RwvRecommendations :mood="mood"></RwvRecommendations>
+    </div>
+  </b-overlay>
 </template>
 
 <script>
-import * as faceapi from "face-api.js";
-export default {
-  mounted() {
-    console.log(faceapi.nets);
-    Promise.all([
-      faceapi.nets.tinyFaceDetector.loadFromUri("@/models"),
-      faceapi.nets.faceLandmark68Net.loadFromUri("/models"),
-      faceapi.nets.faceRecognitionNet.loadFromUri("/models"),
-      faceapi.nets.faceExpressionNet.loadFromUri("/models"),
-      faceapi.nets.ageGenderNet.loadFromUri("/models")
-    ]).then(this.startVideo);
-  },
+import { RECOMMENDATIONSERVICE_INSTANCE } from "@/services/recommendations.service";
+// @ is an alias to /src
+import RwvCamera from "@/components/TheCamera.vue";
+import RwvText from "@/components/TheText.vue";
+import RwvRecommendations from "@/components/TheRecommendations.vue";
 
+import * as tf from "@tensorflow/tfjs";
+import * as faceapi from "face-api.js";
+
+const params = {
+  minConfidence: 0.5
+};
+
+export default {
+  name: "Home",
+  data() {
+    return {
+      mood: "",
+      class: null,
+      playlists: [],
+      faceModel: null,
+      emotionModel: null,
+      image: null,
+      show: false,
+      imageSnapInterval: null
+    };
+  },
+  components: {
+    RwvCamera,
+    RwvText,
+    RwvRecommendations
+  },
+  mounted() {
+    this.init();
+  },
+  beforeDestroy() {
+    clearInterval(this.imageSnapInterval);
+  },
   methods: {
-    startVideo() {
-      const video = document.getElementById("video");
-      window.navigator.mediaDevices
-        .getUserMedia({ video: true })
-        .then(stream => {
-          video.srcObject = stream;
-          video.onloadedmetadata = e => {
-            const canvas = faceapi.createCanvasFromMedia(video);
-            document.body.append(canvas);
-            const displaySize = { width: video.width, height: video.height };
-            faceapi.matchDimensions(canvas, displaySize);
-            setInterval(async () => {
-              const detections = await faceapi
-                .detectAllFaces(video, new faceapi.TinyFaceDetectorOptions())
-                .withFaceLandmarks()
-                .withFaceExpressions()
-                .withAgeAndGender();
-              const resizedDetections = faceapi.resizeResults(
-                detections,
-                displaySize
-              );
-              canvas
-                .getContext("2d")
-                .clearRect(0, 0, canvas.width, canvas.height);
-              faceapi.draw.drawDetections(canvas, resizedDetections);
-              //faceapi.draw.drawFaceLandmarks(canvas, resizedDetections)
-              faceapi.draw.drawFaceExpressions(canvas, resizedDetections);
-              resizedDetections.forEach(detection => {
-                const box = detection.detection.box;
-                const drawBox = new faceapi.draw.DrawBox(box, {
-                  label:
-                    "Age: " +
-                    Math.round(detection.age) +
-                    "\nGender: " +
-                    detection.gender
-                });
-                drawBox.draw(canvas);
-              });
-            }, 100);
-          };
+    async init() {
+      // load the face detection api & emotion detection model
+      await faceapi.loadSsdMobilenetv1Model("/models/features/");
+      await faceapi.loadFaceLandmarkModel("/models/features");
+      await faceapi.loadFaceExpressionModel("/models/features");
+
+      this.emotionModel = await tf.loadLayersModel(
+        "/models/emotion/model.json"
+      );
+
+      this.imageSnapInterval = setInterval(this.getEmotion, 1000);
+    },
+    setLoading() {
+      this.show = true;
+    },
+    getEmotion: async function() {
+      const image = this.$children[0].$children[0].webcam.webcamElement;
+      const canvas = faceapi.createCanvasFromMedia(image);
+      let expression;
+      const userExpression = await faceapi
+        .detectSingleFace(image)
+        .withFaceLandmarks()
+        .withFaceExpressions();
+      if (typeof userExpression === "undefined") {
+        this.show = false;
+      } else {
+        this.show = false;
+        expression = Object.keys(userExpression.expressions).reduce(function(
+          a,
+          b
+        ) {
+          return userExpression.expressions[a] > userExpression.expressions[b]
+            ? a
+            : b;
         });
+      }
+
+      RECOMMENDATIONSERVICE_INSTANCE.setUserMood(expression);
+
+      this.setMood(expression);
+    },
+    setMood(mood) {
+      this.mood = mood;
+    },
+    setImage(image) {
+      console.log("picture taken");
+      this.image = image;
     }
   }
 };
 </script>
 
-<style lang="scss" scoped></style>
+<style scoped>
+RwvRecommendations {
+  max-height: 720px;
+  overflow-y: scroll;
+  border: black;
+}
+
+#modal {
+  opacity: 0.5 !important;
+}
+</style>

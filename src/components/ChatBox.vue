@@ -20,11 +20,7 @@
           <div class="cm-msg-text">{{ message }}</div>
         </div>
         <div id="cm-msg-2" class="chat-msg user" style="">
-          <span class="msg-avatar">
-            <img
-              src="https://image.crisp.im/avatar/operator/196af8cc-f6ad-4ef7-afd1-c45d5231387c/240/?1483361727745"
-            />
-          </span>
+          <span class="msg-avatar"> </span>
           <div class="cm-msg-text">sdf</div>
         </div>
       </div>
@@ -46,9 +42,9 @@ export default {
   props: {
     userMessages: {
       default: () => [],
-      type: Array,
-    },
-  },
+      type: Array
+    }
+  }
 };
 </script>
 
